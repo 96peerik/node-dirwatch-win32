@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nodedirwatch/node-dirwatch-win32.git"
+    "url": "https://github.com/96peerik/node-dirwatch-win32.git"
   },
   "dependencies": {
     "nan": "^2.1.0",
