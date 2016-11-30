@@ -5,8 +5,8 @@
       "sources": [
         "src/DirectoryWatcher.h",
         "src/DirectoryWatcher.cc",
-        "src/Utils.h",
-        "src/Utils.cc",
+        "src/V8Utils.h",
+        "src/V8Utils.cc",
         "src/EventWorker.h"
       ],
       "libraries": [
