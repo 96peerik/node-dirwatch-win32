@@ -1,19 +1,17 @@
 {
   "name": "node-dirwatch-win32",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Node.js directory watcher for win32",
   "main": "node-dirwatch-win32.js",
   "private": false,
   "gypfile": true,
   "scripts": {
-    "install": "prebuild --download"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/96peerik/node-dirwatch-win32.git"
   },
   "dependencies": {
-    "nan": "^2.4.0",
-    "prebuild": "^2.7.1"
+    "nan": ">=2.0.0"
   }
 }
