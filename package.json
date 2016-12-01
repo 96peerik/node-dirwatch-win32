@@ -1,10 +1,12 @@
 {
   "name": "node-dirwatch-win32",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Node.js directory watcher for win32",
   "main": "node-dirwatch-win32.js",
   "private": false,
   "gypfile": true,
+  "os": ["win32"],
+  "engines": {"node": ">=4.4.5"}
   "scripts": {
   },
   "repository": {
