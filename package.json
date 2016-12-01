@@ -6,7 +6,7 @@
   "private": false,
   "gypfile": true,
   "os": ["win32"],
-  "engines": {"node": ">=4.4.5"}
+  "engines": {"node": ">=4.4.5"},
   "scripts": {
   },
   "repository": {
