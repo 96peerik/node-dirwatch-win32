@@ -1,6 +1,5 @@
 #include "nan.h"
 #include "V8Utils.h"
-#include <iostream>
 #include <sstream>
   
 using namespace std;
@@ -16,25 +15,6 @@ namespace V8Utils {
     std::wstring wstrTo(size_needed, 0);
     MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
     return wstrTo;
-  }
-
-  void EmitChange(void* owner) {
-    Nan::ObjectWrap *sender = (Nan::ObjectWrap*)owner;
-    Nan::HandleScope scope;
-    v8::Local<v8::Value> argv[1] = {
-      Nan::New("change").ToLocalChecked()
-    };
-    Nan::MakeCallback(sender->handle(), "emit", 1, argv);
-  }
-
-  void EmitError(void* owner, string message) {
-    Nan::ObjectWrap *sender = (Nan::ObjectWrap*)owner;
-    Nan::HandleScope scope;
-    v8::Local<v8::Value> argv[2] = {
-      Nan::New("error").ToLocalChecked(),
-      Nan::Error(Nan::New<String>(message).ToLocalChecked())
-    };
-    Nan::MakeCallback(sender->handle(), "emit", 2, argv);
   }
 
 // Create a string with last error message

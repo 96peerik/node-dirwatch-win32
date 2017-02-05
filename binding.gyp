@@ -7,7 +7,6 @@
         "src/DirectoryWatcher.cc",
         "src/V8Utils.h",
         "src/V8Utils.cc",
-        "src/EventWorker.h"
       ],
       "libraries": [
       ],

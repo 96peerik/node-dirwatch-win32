@@ -1,8 +1,8 @@
 #pragma once
 #include <nan.h>
 #include <v8.h>
-#include "EventWorker.h"
 #include "V8Utils.h"
+#include <thread>
 
 #define _WIN32_FUSION 0x0100
 
@@ -11,11 +11,23 @@ using namespace std;
 
 static string *moduleFilename;
 
-class DirectoryWatcher : public Nan::ObjectWrap
-{
+class DirectoryWatcher : public Nan::ObjectWrap {
 private:
   ISupportErrorInfo * supportErrorInfo = NULL;
+  wstring dir;
+  Nan::Callback *handler;
+  uv_async_t async;
+  HANDLE dwChangeHandles[2];
+  void startThread();
+  void stopThread();
+  void threadMethod();
 public:
+  std::thread thd;
+  DWORD lastError;
+  bool isActive;
+  void emitChange();
+  void emitLastError();
+
   static void Init(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target, Handle<Object> module){
 
     v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
@@ -31,13 +43,15 @@ public:
     return Nan::ObjectWrap::Unwrap<DirectoryWatcher>(info.This());
   }
 
-  static void EmitChange(void* owner, int cmd);
+  void EmitChange(int cmd);
 
   static NAN_METHOD(New) {
     if (info.IsConstructCall()) {
       wstring dir;
       dir = V8Utils::v8StrToWStr(info[0]->ToString());
-      DirectoryWatcher *obj = new DirectoryWatcher(dir);
+      Nan::Callback *callback = new Nan::Callback(info[1].As<v8::Function>());
+
+      DirectoryWatcher *obj = new DirectoryWatcher(dir, callback);
       obj->Wrap(info.This());
       info.GetReturnValue().Set(info.This());
     }
@@ -55,7 +69,7 @@ public:
   }
 
 public:
-  DirectoryWatcher(wstring dir);
+  DirectoryWatcher(wstring dir, Nan::Callback *handler);
   ~DirectoryWatcher();
 };  
 
