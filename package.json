@@ -1,6 +1,6 @@
 {
   "name": "node-dirwatch-win32",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Node.js directory watcher for win32",
   "main": "node-dirwatch-win32.js",
   "private": false,

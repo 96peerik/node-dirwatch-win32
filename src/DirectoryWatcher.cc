@@ -1,18 +1,17 @@
 #include "DirectoryWatcher.h"
 #include <windows.h>
-#include <iostream>
 
 using namespace v8;
 using namespace std;
 
-DirectoryWatcher::DirectoryWatcher(wstring dir, Nan::Callback *handler): handler(handler), dir(dir)
+DirectoryWatcher::DirectoryWatcher(wstring dir): dir(dir)
 {
   startThread();
 }
 
 DirectoryWatcher::~DirectoryWatcher()
 {
-  handler = NULL;
+  stopThread();
 }
 
 void DirectoryWatcher::emitChange() {
@@ -37,8 +36,7 @@ void DirectoryWatcher::emitLastError() {
 
 void DirectoryWatcher::threadMethod() {
   DWORD dwWaitStatus;
-  dwChangeHandles[1] = CreateEventW(NULL, FALSE, FALSE, L"ExitEvent");
-  dwChangeHandles[0] = FindFirstChangeNotificationW(
+  HANDLE filehandle = FindFirstChangeNotificationW(
     dir.c_str(),
     TRUE,
     FILE_NOTIFY_CHANGE_FILE_NAME |
@@ -46,76 +44,73 @@ void DirectoryWatcher::threadMethod() {
     FILE_NOTIFY_CHANGE_DIR_NAME |
     FILE_NOTIFY_CHANGE_LAST_WRITE); // watch file name changes
 
-  if (dwChangeHandles[0] == INVALID_HANDLE_VALUE)
+  if (filehandle == INVALID_HANDLE_VALUE)
   {
     lastError = GetLastError();
-    uv_async_send(&async);
-    isActive = false;
+    uv_async_send(async);
     return;
   }
 
   bool _notified = false;
+
   while (isActive) {
-    dwWaitStatus = WaitForMultipleObjects(2, dwChangeHandles, false, 10);
-    if (dwWaitStatus == WAIT_OBJECT_0 + 0) {
-      _notified = true;
-      FindNextChangeNotification(dwChangeHandles[0]);
-    }
-    else if (dwWaitStatus == WAIT_OBJECT_0 + 1) {
-      lastError = 0;
-      FindCloseChangeNotification(dwChangeHandles[0]);
+    dwWaitStatus = WaitForSingleObject(filehandle, 100);
+    if (!isActive) { 
+      FindCloseChangeNotification(filehandle);
       return;
     }
-    else if (dwWaitStatus == WAIT_TIMEOUT) {
+    if (dwWaitStatus == WAIT_OBJECT_0) {
+      _notified = true;
+      FindNextChangeNotification(filehandle);
+    } else if (dwWaitStatus == WAIT_TIMEOUT) {
       if (_notified) {
         _notified = false;
         lastError = 0;
-        uv_async_send(&async);
-        FindNextChangeNotification(dwChangeHandles[0]);
+        if (async->data)
+          uv_async_send(async);
       }
     }
     else {
-      isActive = false;
       lastError = GetLastError();
-      uv_async_send(&async);
-      FindCloseChangeNotification(dwChangeHandles[0]);
-      return;
+      if (async->data)
+        uv_async_send(async);
     }
   }
 }
 
 //called in main thread
 void WorkAsyncComplete(uv_async_t *handle) {
+  if (handle->data == NULL) {
+    return;
+  }
   DirectoryWatcher *dw = (DirectoryWatcher*)handle->data;
-  std::thread* thd = &dw->thd;
-  
   if (dw->lastError) {
     dw->emitLastError();
-  }
-  
-  if (dw->isActive) {
+  } else {
     dw->emitChange();
   }
-  else {
-    thd->join();
-    handle->data = NULL;
-    uv_close((uv_handle_t*)handle, NULL);
-  }
 }
-
 
 void DirectoryWatcher::stopThread() {
+  async->data = NULL;
+  uv_close((uv_handle_t *)async, OnClose);
+
   isActive = false;
-  SetEvent(dwChangeHandles[1]);
+  if (thd->joinable())
+    thd->join();
+
+  delete thd;
+  thd = NULL;
 }
 
+void DirectoryWatcher::OnClose(uv_handle_t *handle) {
+  delete handle;
+}
 
 void DirectoryWatcher::startThread() {
-  if (async.data == this) return;
-  isActive = true;
-  uv_async_init(uv_default_loop(), &async, (uv_async_cb)WorkAsyncComplete);
-  async.data = this;
-  // uv_unref((uv_handle_t *)&work->async);
-  thd = std::thread(&DirectoryWatcher::threadMethod, this);
+  async = new uv_async_t();
+  uv_async_init(uv_default_loop(), async, (uv_async_cb)WorkAsyncComplete);
+  async->data = this;
+  thd = new std::thread(&DirectoryWatcher::threadMethod, this);
 }
 
