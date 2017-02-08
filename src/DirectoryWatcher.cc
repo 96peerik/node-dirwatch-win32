@@ -40,7 +40,6 @@ void DirectoryWatcher::threadMethod() {
     dir.c_str(),
     TRUE,
     FILE_NOTIFY_CHANGE_FILE_NAME |
-    FILE_NOTIFY_CHANGE_LAST_WRITE |
     FILE_NOTIFY_CHANGE_DIR_NAME |
     FILE_NOTIFY_CHANGE_LAST_WRITE); // watch file name changes
 
@@ -111,6 +110,7 @@ void DirectoryWatcher::startThread() {
   async = new uv_async_t();
   uv_async_init(uv_default_loop(), async, (uv_async_cb)WorkAsyncComplete);
   async->data = this;
+  isActive = true;
   thd = new std::thread(&DirectoryWatcher::threadMethod, this);
 }
 
